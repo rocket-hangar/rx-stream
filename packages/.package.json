@@ -1,0 +1,13 @@
+{
+  "author": "SSen <i@ssen.name>",
+  "license": "MIT",
+  "repository": "https://github.com/rocket-hangar/rxpipe",
+  "bugs": "https://github.com/rocket-hangar/rxpipe/issues",
+  "homepage": "https://github.com/rocket-hangar/rxpipe/tree/master/source/src/{name}",
+  "engines": {
+    "node": ">=12"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}
