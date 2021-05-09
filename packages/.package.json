@@ -1,9 +1,9 @@
 {
   "author": "SSen <i@ssen.name>",
   "license": "MIT",
-  "repository": "https://github.com/rocket-hangar/rxpipe",
-  "bugs": "https://github.com/rocket-hangar/rxpipe/issues",
-  "homepage": "https://github.com/rocket-hangar/rxpipe/tree/master/source/src/{name}",
+  "repository": "https://github.com/rocket-hangar/rx-stream",
+  "bugs": "https://github.com/rocket-hangar/rx-stream/issues",
+  "homepage": "https://github.com/rocket-hangar/rx-stream/tree/master/source/src/{name}",
   "engines": {
     "node": ">=12"
   },

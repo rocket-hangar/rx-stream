@@ -3,7 +3,7 @@ import { StreamStatus, useStream } from '@rx-stream/react';
 import { act, renderHook } from '@testing-library/react-hooks';
 import { of } from 'rxjs';
 
-describe('rxpipe/react', () => {
+describe('useStream', () => {
   test('simple test', async () => {
     const fn = pipe(
       (n: number) => of(n.toString()),
