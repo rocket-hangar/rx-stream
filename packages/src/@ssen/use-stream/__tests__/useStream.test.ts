@@ -1,7 +1,7 @@
+import { StreamStatus, useStream } from '@ssen/use-stream';
 import { act, renderHook } from '@testing-library/react-hooks';
 import { of } from 'rxjs';
-import { StreamStatus, useStream } from 'rxpipe/react';
-import { rxpipe } from 'rxpipe/rxpipe';
+import { rxpipe } from 'rxpipe';
 
 describe('rxpipe/react', () => {
   test('simple test', async () => {

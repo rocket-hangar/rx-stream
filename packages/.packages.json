@@ -3,5 +3,9 @@
   "rxpipe": {
     "version": "0.4.0",
     "tag": "latest"
+  },
+  "@ssen/*": {
+    "version": "0.4.0",
+    "tag": "latest"
   }
 }
