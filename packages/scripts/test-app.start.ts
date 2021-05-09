@@ -8,7 +8,7 @@ import puppeteer from 'puppeteer';
   const remoteDebuggingPort: number = +(process.env.INSPECT_CHROME ?? 9222);
 
   const { port } = await start({
-    app: 'rxpipe-test-app',
+    app: 'test-app',
     // type ctrl + space (your code completion shortcut on your IDE)
     // you can look at more configuration options
   });

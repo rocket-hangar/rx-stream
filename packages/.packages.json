@@ -1,10 +1,6 @@
 {
   "$schema": "https://rocket-hangar.github.io/rocket-punch/schemas/packages.json",
-  "rxpipe": {
-    "version": "0.4.0",
-    "tag": "latest"
-  },
-  "@ssen/*": {
+  "@rx-stream/*": {
     "version": "0.4.0",
     "tag": "latest"
   }

@@ -2,9 +2,9 @@
   "name": "packages",
   "version": "1.0.0",
   "scripts": {
-    "rxpipe-test-app:build": "cross-env TS_NODE_PROJECT=tsconfig.script.json node -r ts-node/register -r tsconfig-paths/register scripts/rxpipe-test-app.build.ts",
-    "rxpipe-test-app:start": "cross-env TS_NODE_PROJECT=tsconfig.script.json INSPECT_CHROME=9222 node -r ts-node/register -r tsconfig-paths/register scripts/rxpipe-test-app.start.ts",
-    "rxpipe-test-app:start:debug": "cross-env TS_NODE_PROJECT=tsconfig.script.json INSPECT_CHROME=9222 node --inspect-brk=9588 -r ts-node/register -r tsconfig-paths/register scripts/rxpipe-test-app.start.ts",
+    "test-app:build": "cross-env TS_NODE_PROJECT=tsconfig.script.json node -r ts-node/register -r tsconfig-paths/register scripts/test-app.build.ts",
+    "test-app:start": "cross-env TS_NODE_PROJECT=tsconfig.script.json INSPECT_CHROME=9222 node -r ts-node/register -r tsconfig-paths/register scripts/test-app.start.ts",
+    "test-app:start:debug": "cross-env TS_NODE_PROJECT=tsconfig.script.json INSPECT_CHROME=9222 node --inspect-brk=9588 -r ts-node/register -r tsconfig-paths/register scripts/test-app.start.ts",
     "pack": "rocket-punch build --strict",
     "publish": "rocket-punch publish",
     "storybook:start": "start-storybook",

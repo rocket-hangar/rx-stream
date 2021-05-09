@@ -8,4 +8,6 @@ export type OperatorReturn<R> = ObservableInput<R> | R extends ObservableInput<
 
 export type Operator<T, R> = (params: T) => OperatorReturn<R>;
 
-export type ValueOfOperatorResult<T> = T extends ObservableInput<infer U> ? U : T;
+export type ValueOfOperatorResult<T> = T extends ObservableInput<infer U>
+  ? U
+  : T;

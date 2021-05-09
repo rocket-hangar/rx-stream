@@ -1,9 +1,9 @@
-import { rxpipe } from 'rxpipe';
+import { pipe } from '@rx-stream/pipe';
 import { lastValueFrom, Observable, of } from 'rxjs';
 
-describe('rxpipe-typings', () => {
+describe('pipe-typings', () => {
   test('typing test - empty params', () => {
-    const o = rxpipe(
+    const o = pipe(
       (_: void) => of({ x: 1 }),
       ({ x }) => Promise.resolve({ y: x + 1 }),
       ({ y }) => ({ z: y + 1 }),
@@ -23,7 +23,7 @@ describe('rxpipe-typings', () => {
   });
 
   test('typing test - if statement with type or', () => {
-    const o = rxpipe(
+    const o = pipe(
       (a: number) => of({ x: a * 2 }),
       ({ x }) => (x > 10 ? of({ y1: x * 100 }) : { y2: 0 }),
       (result) => ('y1' in result ? { z: true } : { z: false }),
@@ -59,7 +59,7 @@ describe('rxpipe-typings', () => {
   });
 
   test('typing test - complex structure', () => {
-    const o = rxpipe(
+    const o = pipe(
       (_: void) =>
         Math.random() > 0.5 ? of(10) : Math.random() ? Promise.resolve(10) : 10,
       (i: number) => (i > 10 ? Promise.resolve(i + 10) : i.toString()),
@@ -79,7 +79,7 @@ describe('rxpipe-typings', () => {
     }
 
     const o = (param: Parameters<typeof fn1>[0] & { m: number }) => {
-      return rxpipe(
+      return pipe(
         fn1,
         (s: string) => of(parseInt(s) + param.m),
         (i: number) => i.toString(),

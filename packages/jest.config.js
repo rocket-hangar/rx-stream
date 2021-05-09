@@ -5,6 +5,6 @@ module.exports = {
 
   collectCoverageFrom: [
     ...jestPreset.collectCoverageFrom,
-    '!src/rxpipe-test-app/**',
+    '!src/test-app/**',
   ]
 };

@@ -1,5 +1,5 @@
+import { pipe } from '@rx-stream/pipe';
 import { Observable, of } from 'rxjs';
-import { rxpipe } from 'rxpipe';
 
 class StreamRecorder {
   readonly records: unknown[] = [];
@@ -9,10 +9,10 @@ class StreamRecorder {
   };
 }
 
-describe('rxpipe', () => {
+describe('pipe', () => {
   test('simple test', (done) => {
     // Arrange
-    const fn = rxpipe(
+    const fn = pipe(
       (n: number) => of(n.toString()),
       (s: string) => Promise.resolve(parseInt(s)),
       (n: number) => n.toString(),
@@ -36,7 +36,7 @@ describe('rxpipe', () => {
   test('wrap the pipe', (done) => {
     // Arrange
     const fn = (n: number) => {
-      return rxpipe(
+      return pipe(
         (n1: number) => of(n1.toString()),
         (s: string) => Promise.resolve(parseInt(s) + n),
         (n3: number) => (n3 + n).toString(),
@@ -63,7 +63,7 @@ describe('rxpipe', () => {
     const fn = (n: number) => {
       let x: number;
 
-      return rxpipe(
+      return pipe(
         (n1: number) => {
           x = n1 * 2;
           return of(n1.toString());
@@ -92,7 +92,7 @@ describe('rxpipe', () => {
 
   test('async test', (done) => {
     // Arrange
-    const fn = rxpipe(
+    const fn = pipe(
       (n: number) =>
         new Observable<number | string>((subscriber) => {
           let i: number = 0;
@@ -140,7 +140,7 @@ describe('rxpipe', () => {
 
   test('error test', (done) => {
     // Arrange
-    const fn = rxpipe(
+    const fn = pipe(
       (n: number) =>
         new Observable<number | string>((subscriber) => {
           let i: number = 0;
@@ -192,7 +192,7 @@ describe('rxpipe', () => {
 
   test('error test with throw', (done) => {
     // Arrange
-    const fn = rxpipe(
+    const fn = pipe(
       (n: number) =>
         new Observable<number | string>((subscriber) => {
           let i: number = 0;
