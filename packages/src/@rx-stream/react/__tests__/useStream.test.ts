@@ -1,5 +1,6 @@
 import { pipe } from '@rx-stream/pipe';
 import { StreamStatus, useStream } from '@rx-stream/react';
+import { AbortStream } from '@rx-stream/react/errors';
 import { act, renderHook } from '@testing-library/react-hooks';
 import { of } from 'rxjs';
 
@@ -96,5 +97,36 @@ describe('useStream', () => {
     });
 
     expect(result.current[1]).toMatchObject({ status: StreamStatus.READY });
+  });
+
+  test('abort test', async () => {
+    const fn = pipe(
+      (n: number) => of(n.toString()),
+      (s: string) =>
+        new Promise<number>((_resolve, reject) => {
+          return setTimeout(() => {
+            reject(new AbortStream());
+          }, 100);
+        }),
+      (n: number) => n.toString(),
+    );
+
+    const { result, waitForNextUpdate } = renderHook(() => useStream(fn));
+
+    expect(result.current[1]).toMatchObject({ status: StreamStatus.READY });
+
+    act(() => {
+      result.current[0](10);
+    });
+
+    expect(result.current[1]).toMatchObject({
+      status: StreamStatus.IN_PROGRESS,
+    });
+
+    await waitForNextUpdate();
+
+    expect(result.current[1]).toMatchObject({
+      status: StreamStatus.READY,
+    });
   });
 });

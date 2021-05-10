@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { Observable, Subject, Subscription } from 'rxjs';
+import { AbortStream } from './errors';
 
 export enum StreamStatus {
   IN_PROGRESS = 'IN_PROGRESS',
@@ -80,11 +81,17 @@ export function useStream<Params, Value>(
         error: (error) => {
           subscriber.error(error);
 
-          setResult({
-            status: StreamStatus.ERROR,
-            error,
-            clear: () => setResult(ready),
-          });
+          if (error instanceof AbortStream) {
+            setResult({
+              status: StreamStatus.READY,
+            });
+          } else {
+            setResult({
+              status: StreamStatus.ERROR,
+              error,
+              clear: () => setResult(ready),
+            });
+          }
 
           subscriptionRef.current = undefined;
           subscriberRef.current = undefined;
