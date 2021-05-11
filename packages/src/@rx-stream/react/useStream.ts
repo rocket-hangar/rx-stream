@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
-import { Observable, Subject, Subscription } from 'rxjs';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { BehaviorSubject, Observable, Subject, Subscription } from 'rxjs';
 import { AbortStream } from './errors';
 
 export enum StreamStatus {
@@ -47,14 +47,27 @@ const ready: StreamReady = {
 
 export function useStream<Params, Value>(
   fn: (params: Params) => Observable<Value>,
+  transferOnUnmount?: (stream: Observable<StreamResult<Value>>) => void,
 ): StreamReturn<Params, Value> {
   const [result, setResult] = useState<StreamResult<Value>>(() => ready);
 
   const subscriptionRef = useRef<Subscription | undefined>(undefined);
   const subscriberRef = useRef<Subject<Value> | undefined>(undefined);
 
+  const unmountedRef = useRef<boolean>(false);
+  const transferOnUnmountRef = useRef(transferOnUnmount);
+  const unmountCallbackRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    transferOnUnmountRef.current = transferOnUnmount;
+  }, [transferOnUnmount]);
+
   const fetch = useCallback(
     (params: Params) => {
+      if (unmountedRef.current) {
+        throw new Error(`Do not call this after unmounted!`);
+      }
+
       const subscriber = new Subject<Value>();
 
       if (subscriptionRef.current) {
@@ -66,6 +79,15 @@ export function useStream<Params, Value>(
       }
 
       let latestValue: Value;
+      let transferedStream: BehaviorSubject<StreamResult<Value>> | null;
+
+      function updateResult(nextValue: StreamResult<Value>) {
+        if (unmountedRef.current && transferedStream) {
+          transferedStream.next(nextValue);
+        } else {
+          setResult(nextValue);
+        }
+      }
 
       const subscription = fn(params).subscribe({
         next: (value) => {
@@ -73,7 +95,7 @@ export function useStream<Params, Value>(
 
           latestValue = value;
 
-          setResult({
+          updateResult({
             status: StreamStatus.IN_PROGRESS,
             value,
           });
@@ -82,16 +104,21 @@ export function useStream<Params, Value>(
           subscriber.error(error);
 
           if (error instanceof AbortStream) {
-            setResult({
+            updateResult({
               status: StreamStatus.READY,
             });
           } else {
-            setResult({
+            updateResult({
               status: StreamStatus.ERROR,
               error,
-              clear: () => setResult(ready),
+              clear: () => updateResult(ready),
             });
           }
+
+          transferedStream?.error(error);
+          transferedStream?.unsubscribe();
+          transferedStream = null;
+          unmountCallbackRef.current = null;
 
           subscriptionRef.current = undefined;
           subscriberRef.current = undefined;
@@ -101,11 +128,16 @@ export function useStream<Params, Value>(
         complete: () => {
           subscriber.complete();
 
-          setResult({
+          updateResult({
             status: StreamStatus.DONE,
             value: latestValue,
-            clear: () => setResult(ready),
+            clear: () => updateResult(ready),
           });
+
+          transferedStream?.complete();
+          transferedStream?.unsubscribe();
+          transferedStream = null;
+          unmountCallbackRef.current = null;
 
           subscriptionRef.current = undefined;
           subscriberRef.current = undefined;
@@ -117,10 +149,33 @@ export function useStream<Params, Value>(
       subscriberRef.current = subscriber;
       subscriptionRef.current = subscription;
 
+      unmountCallbackRef.current = () => {
+        if (transferOnUnmountRef.current) {
+          transferedStream = new BehaviorSubject<StreamResult<Value>>({
+            status: StreamStatus.IN_PROGRESS,
+            value: latestValue,
+          });
+          transferOnUnmountRef.current(transferedStream);
+        } else {
+          subscriber.complete();
+          subscriptionRef.current = undefined;
+          subscriberRef.current = undefined;
+          subscriber.unsubscribe();
+          subscription.unsubscribe();
+        }
+      };
+
       return subscriber.asObservable();
     },
     [fn],
   );
+
+  useEffect(() => {
+    return () => {
+      unmountedRef.current = true;
+      unmountCallbackRef.current?.();
+    };
+  }, []);
 
   return [fetch, result];
 }

@@ -1,8 +1,9 @@
 import { pipe } from '@rx-stream/pipe';
-import { StreamStatus, useStream } from '@rx-stream/react';
+import { StreamResult, StreamStatus, useStream } from '@rx-stream/react';
 import { AbortStream } from '@rx-stream/react/errors';
 import { act, renderHook } from '@testing-library/react-hooks';
-import { of } from 'rxjs';
+import { lastValueFrom, Observable, of, Subscription, timer } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 describe('useStream', () => {
   test('simple test', async () => {
@@ -128,5 +129,106 @@ describe('useStream', () => {
     expect(result.current[1]).toMatchObject({
       status: StreamStatus.READY,
     });
+  });
+
+  test('transfer on unmount', async () => {
+    const fn = pipe(
+      (n: number) => timer(500).pipe(map(() => n.toString())),
+      (s: string) =>
+        new Promise<number>((resolve) =>
+          setTimeout(() => resolve(parseInt(s)), 500),
+        ),
+      (n: number) => n.toString(),
+    );
+
+    let transferedStream: Observable<
+      StreamResult<number | string>
+    > | null = null;
+
+    const { result, waitForNextUpdate, unmount, waitFor } = renderHook(() =>
+      useStream(fn, (stream) => (transferedStream = stream)),
+    );
+
+    expect(result.current[1]).toMatchObject({ status: StreamStatus.READY });
+
+    act(() => {
+      result.current[0](10);
+    });
+
+    await waitForNextUpdate({ timeout: 1000 });
+
+    expect(result.current[1]).toMatchObject({
+      status: StreamStatus.IN_PROGRESS,
+    });
+
+    unmount();
+
+    await waitFor(() => !!transferedStream, { timeout: 1000 });
+
+    await expect(lastValueFrom(transferedStream!)).resolves.toMatchObject({
+      status: StreamStatus.DONE,
+      value: '10',
+    });
+  });
+
+  test('do not call fetch after unmount', async () => {
+    const fn = pipe(
+      (n: number) => timer(500).pipe(map(() => n.toString())),
+      (s: string) =>
+        new Promise<number>((resolve) =>
+          setTimeout(() => resolve(parseInt(s)), 500),
+        ),
+      (n: number) => n.toString(),
+    );
+
+    const { result, unmount } = renderHook(() => useStream(fn));
+
+    expect(result.current[1]).toMatchObject({ status: StreamStatus.READY });
+
+    unmount();
+
+    expect(() =>
+      act(() => {
+        result.current[0](10);
+      }),
+    ).toThrowError();
+  });
+
+  test('stop stream on unmount', async () => {
+    const fn = pipe(
+      (n: number) => timer(500).pipe(map(() => n.toString())),
+      (s: string) =>
+        new Promise<number>((resolve) =>
+          setTimeout(() => resolve(parseInt(s)), 500),
+        ),
+      (n: number) => n.toString(),
+    );
+
+    const { result, waitForNextUpdate, unmount } = renderHook(() =>
+      useStream(fn),
+    );
+
+    expect(result.current[1]).toMatchObject({ status: StreamStatus.READY });
+
+    let subscription: Subscription | null = null;
+
+    act(() => {
+      subscription = result.current[0](10).subscribe();
+    });
+
+    await waitForNextUpdate({ timeout: 1000 });
+
+    expect(result.current[1]).toMatchObject({
+      status: StreamStatus.IN_PROGRESS,
+    });
+
+    unmount();
+
+    await new Promise((resolve) =>
+      setTimeout(() => {
+        expect(subscription!.closed).toBeTruthy();
+        resolve(null);
+      }, 1000),
+    );
   });
 });
