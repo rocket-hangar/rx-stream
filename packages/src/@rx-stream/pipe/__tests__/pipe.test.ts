@@ -33,6 +33,39 @@ describe('pipe', () => {
     });
   });
 
+  test('unsubscribe test', (done) => {
+    // Arrange
+    const fn = pipe(
+      (n: number) => of(n.toString()),
+      (s: string) => Promise.resolve(parseInt(s)),
+      (n: number) => n.toString(),
+    );
+
+    const recorder = new StreamRecorder();
+
+    // Act
+    const subscription = fn(10).subscribe({
+      next: (value) => {
+        recorder.record(value);
+
+        // Act
+        if (recorder.records.length === 2) {
+          subscription.unsubscribe();
+        }
+      },
+      complete: () => {
+        throw new Error('never come here!');
+      },
+    });
+
+    // Assert
+    setTimeout(() => {
+      expect(subscription.closed).toBeTruthy();
+      expect(JSON.stringify(recorder.records)).toBe(JSON.stringify(['10', 10]));
+      done();
+    }, 1000);
+  });
+
   test('wrap the pipe', (done) => {
     // Arrange
     const fn = (n: number) => {

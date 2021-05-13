@@ -1,7 +1,7 @@
 {
   "$schema": "https://rocket-hangar.github.io/rocket-punch/schemas/packages.json",
   "@rx-stream/*": {
-    "version": "0.6.0",
+    "version": "0.7.0",
     "tag": "latest"
   }
 }

@@ -231,4 +231,108 @@ describe('useStream', () => {
       }, 1000),
     );
   });
+
+  test('back to ready when abort', async () => {
+    const fn = pipe(
+      (n: number) => timer(500).pipe(map(() => n.toString())),
+      (s: string) =>
+        new Promise<number>((resolve) =>
+          setTimeout(() => resolve(parseInt(s)), 500),
+        ),
+      (n: number) => n.toString(),
+    );
+
+    const { result, waitForNextUpdate } = renderHook(() => useStream(fn));
+
+    expect(result.current[1]).toMatchObject({ status: StreamStatus.READY });
+
+    let subscription: Subscription | null = null;
+
+    act(() => {
+      subscription = result.current[0](10).subscribe();
+    });
+
+    await waitForNextUpdate({ timeout: 1000 });
+
+    expect(result.current[1]).toMatchObject({
+      status: StreamStatus.IN_PROGRESS,
+    });
+
+    act(() => {
+      if (result.current[1].status === StreamStatus.IN_PROGRESS) {
+        result.current[1].abort();
+      }
+    });
+
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        expect(result.current[1]).toMatchObject({ status: StreamStatus.READY });
+        expect(subscription!.closed).toBeTruthy();
+
+        resolve();
+      }, 1000);
+    });
+  });
+
+  test('abort + transfer on unmount', async () => {
+    const fn = pipe(
+      (n: number) => timer(500).pipe(map(() => n.toString())),
+      (s: string) =>
+        new Promise<number>((resolve) =>
+          setTimeout(() => resolve(parseInt(s)), 500),
+        ),
+      (n: number) => n.toString(),
+    );
+
+    let transferedStream: Observable<
+      StreamResult<number | string>
+    > | null = null;
+
+    const { result, waitForNextUpdate, unmount, waitFor } = renderHook(() =>
+      useStream(fn, (stream) => (transferedStream = stream)),
+    );
+
+    expect(result.current[1]).toMatchObject({ status: StreamStatus.READY });
+
+    act(() => {
+      result.current[0](10);
+    });
+
+    await waitForNextUpdate({ timeout: 1000 });
+
+    expect(result.current[1]).toMatchObject({
+      status: StreamStatus.IN_PROGRESS,
+    });
+
+    unmount();
+
+    await waitFor(() => !!transferedStream, { timeout: 1000 });
+
+    const records: any[] = [];
+
+    let completed = false;
+
+    const subscription = transferedStream!.subscribe({
+      next: (value) => {
+        records.push(value);
+
+        if (value.status === StreamStatus.IN_PROGRESS) {
+          value.abort();
+        }
+      },
+      complete: () => {
+        completed = true;
+      },
+    });
+
+    return new Promise<void>((resolve) => {
+      setTimeout(() => {
+        expect(records[0]).toMatchObject({ status: StreamStatus.IN_PROGRESS });
+        expect(records[1]).toMatchObject({ status: StreamStatus.READY });
+        expect(subscription.closed).toBeTruthy();
+        expect(completed).toBeTruthy();
+        resolve();
+      }, 1000);
+    });
+  });
 });

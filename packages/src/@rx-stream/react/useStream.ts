@@ -16,6 +16,7 @@ export interface StreamReady {
 export interface StreamInProgress<Value> {
   status: StreamStatus.IN_PROGRESS;
   value: Value;
+  abort: () => void;
 }
 
 export interface StreamDone<Value> {
@@ -98,6 +99,14 @@ export function useStream<Params, Value>(
           updateResult({
             status: StreamStatus.IN_PROGRESS,
             value,
+            abort: () => {
+              updateResult(ready);
+
+              subscriber.complete();
+              subscriber.unsubscribe();
+
+              subscription.unsubscribe();
+            },
           });
         },
         error: (error) => {
@@ -154,10 +163,23 @@ export function useStream<Params, Value>(
           transferedStream = new BehaviorSubject<StreamResult<Value>>({
             status: StreamStatus.IN_PROGRESS,
             value: latestValue,
+            abort: () => {
+              updateResult(ready);
+
+              subscriber.complete();
+              subscriber.unsubscribe();
+
+              subscription.unsubscribe();
+
+              transferedStream?.complete();
+              transferedStream?.unsubscribe();
+              transferedStream = null;
+              unmountCallbackRef.current = null;
+            },
           });
           transferOnUnmountRef.current(transferedStream);
         } else {
-          subscriber.complete();
+          if (!subscriber.closed) subscriber.complete();
           subscriptionRef.current = undefined;
           subscriberRef.current = undefined;
           subscriber.unsubscribe();
